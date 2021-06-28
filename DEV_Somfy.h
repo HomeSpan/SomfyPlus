@@ -1,6 +1,6 @@
 
 ////////////////////////////////////
-//     SOMFY RTS CONTROLLER       //
+//     SOMFY PLUS CONTROLLER      //
 ////////////////////////////////////
 
 #include "extras/RFControl.h"
@@ -350,7 +350,7 @@ struct SomfyShade{
       rfm69.init();
       rfm69.setFrequency(RF_FREQUENCY);
       sprintf(serialNum,"SMF-%05X",SOMFY_ADDRESS & 0x7FFFF);
-      Serial.printf("Somfy+ Serial Number: %s\n",serialNum);
+      Serial.printf("SomfyPlus Serial Number: %s\n",serialNum);
 
       new SpanAccessory(1);  
       new DEV_Identify("SomfyPlus","HomeSpan",serialNum,"32-Channel RTS",SKETCH_VERSION,3);
@@ -374,7 +374,7 @@ struct SomfyShade{
 
     sprintf(channel_s,"CH-%02d",channel);  
     new SpanAccessory(channel+1);
-    new DEV_Identify(name,"HomeSpan",channel_s,"Somfy+",SKETCH_VERSION,0);
+    new DEV_Identify(name,"HomeSpan",channel_s,"SomfyPlus",SKETCH_VERSION,0);
     new DEV_Somfy(channel,channel_s,raiseTime,lowerTime);
   }
 
