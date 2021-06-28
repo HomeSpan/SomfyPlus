@@ -5,9 +5,9 @@ Hardware used for this project:
 
 * An ESP32 board, such as the [Adafruit HUZZAH32 – ESP32 Feather Board](https://www.adafruit.com/product/3405)
 * An RFM69 Transceiver, such as this [RFM69HCW FeatherWing](https://www.sparkfun.com/products/10534) from Adafruit
-* One regular-size pushbutton (normally-open) to serve as both the Somfy PROG button and the channel SELECTOR button
-* Three regular-size pushbuttons (normally-open) to serve as the Somfy UP, DOWN, and MY buttons (optional)
-* One small pushbutton (normally-open) to serve as the HomeSpan Control Button (optional)
+* Three pushbuttons (normally-open) to serve as the Somfy UP, DOWN, and MY buttons (the MY button also serves as the HomeSpan Control Button)
+* One LED and current-limiting resistor to serve as the HomeSpan Status LED
+* One LED and current-limiting resistor to provide visual feedback when RFM69 is transmitting Somfy RTS signals
 
 ## Overview
 
@@ -23,25 +23,25 @@ All Somfy remotes feature:
 * a PROG button that is used to put the motor into programming mode so you can add additional remotes
 * a channel SELECTOR button, if the remote allows the user to control more than one shade or screen
 
-Based on the **superb** work by [Pushstack](https://pushstack.wordpress.com/somfy-rts-protocol/) and other contributors, who reverse-engineered and documented the Somfy-RTS protcols (much thanks!), we can construct a fully-functional, *HomeKit-enabled*, multi-channel Somfy remote using an ESP32, a simple transmitter, and the Arduino HomeSpan Library.
+Based on the **superb** work by [Pushstack](https://pushstack.wordpress.com/somfy-rts-protocol/) and other contributors, who reverse-engineered and documented the Somfy-RTS protcols (much thanks!), we can construct a fully-functional, *HomeKit-enabled*, multi-channel Somfy remote using an ESP32, a simple RF transmitter, and the Arduino [HomeSpan Library](https://github.com/HomeSpan/HomeSpan).
 
-Apart from the obvious benefit of having HomeKit control of your Somfy shades and screens, our HomeSpan version of the Somfy remote also includes two additional benefits:
+Apart from the obvious benefit of having HomeKit (and Siri!) control of your Somfy shades and screens, a SomfyPlus remote also includes two additional benefits:
 
-* The remote allows for an arbitrary number of channels.  Have 20 window shades spread across 5 rooms?  No problem - you can control all of them with a single HomeSpan Somfy device.
+* **Control up to 32 channels!**  Have 20 window shades spread across 5 rooms?  No problem - you can operate all of them with a single SomfyPlus device.
 
-* **Use HomeKit to set the absolute position of your window shade or screen!**  HomeKit natively supports a slider that allows you to specify the exact position of a window shade, from fully open (100%) to fully closed (0%) in increments of 1%.  Unfortunately, the Somfy RTS system does not generally support two way communications, nor do the motors transmit any status about the position of the shade or screen.  However, some clever logic inside the sketch and a few timing parameters is all that is needed to configure the HomeSpan Somfy device to track and directly set a window shade to any desired target position.
+* **Use HomeKit to set the absolute position of your window shade or screen!**  HomeKit natively supports sliders that allow you to specify the exact position of a window shade, from fully open (100%) to fully closed (0%) in increments of 1%.  Unfortunately, the Somfy RTS system does not generally support two way communications, nor do the motors transmit any status about the position of the shade or screen.  However, some clever logic inside the sketch and a few timing parameters is all that is needed to configure SomfyPlus to track and directly set a window shade to any desired target position.
 
 ## Constructing the Hardware
 
-In addition to an ESP32 board, HomeSpan Somfy requires a "433 MHz" transmitter.  However, rather than using a standard carrier frequency of 433.92 MHz, Somfy RTS uses a carrier frequency of 433.42 MHz, which is 0.5 MHz lower than the standard.  Though it is possble to use a standard 433.92 MHz transmitter (such as the one used to construct a HomeSpan remote control for a [Zephyr Kitchen Vent Hood](https://github.com/HomeSpan/ZephyrVentHood)), there is no guarantee that the Somfy motor will accurately receive the RF signal, or that the range will allow for whole-home coverage.
+In addition to an ESP32 board, SomfyPlus requires a "433 MHz" transmitter.  However, rather than using a standard carrier frequency of 433.92 MHz, Somfy RTS uses a carrier frequency of 433.42 MHz, which is 0.5 MHz lower than the standard.  Though it is possble to use a standard 433.92 MHz transmitter (such as the one used to construct a HomeSpan remote control for a [Zephyr Kitchen Vent Hood](https://github.com/HomeSpan/ZephyrVentHood)), there is no guarantee that the Somfy motor will accurately receive the RF signal, or that the range will allow for whole-home coverage.
 
-Instead, this project uses an RFM69 *programmable* 434 MHz transceiver that can be configured to use a carrier frequency of 433.42 MHz to properly match the Somfy RTS system.  The ESP32 communicates with the RFM69 via the ESP32's external SPI bus.  This requires you to connect the MOSI, MISO, and SCK pins on your ESP32 to those same pins on your RFM69.  If you are using Adafruit's RFM69 FeatherWing in combination with Adafruit's ESP32 Feather Board, these connections are already hardwired for you.  You'll also need to make these 3 other connections between the ESP32 and the RFM69:
+Instead, this project uses an RFM69 *programmable* 434 MHz transceiver that can be configured to generate a carrier frequency of 433.42 MHz to properly match the Somfy RTS system.  The ESP32 communicates with the RFM69 via the ESP32's external SPI bus.  This requires you to connect the MOSI, MISO, and SCK pins on your ESP32 to those same pins on your RFM69.  If you are using Adafruit's RFM69 FeatherWing in combination with Adafruit's ESP32 Feather Board, these connections are already hardwired for you.  However, you'll also need to make these 3 other connections between the ESP32 and the RFM69 (see diagram below):
 
 * The SPI Chip Select ("CS") Pin on the RMF69 needs to be connected to a pin on the ESP32 that will be used to enable the RMF69 SPI bus.  This sketch uses GPIO pin 33 on the ESP32 for the RFM69 Chip Select.  If you are using the AdaFruit combination of boards above, simply solder a jumper wire between the through-holes labeled "CS" and "B" ("B" is conveniently hardwired to GPIO pin 33) on the RFM69 FeatherWing.
 
 * The Reset Pin on the of the RFM69 needs to be connected to a pin on the ESP32 that will be used to reset the configuration of the RFM69 settings.  This sketch uses GPIO pin 27.  If you are using the AdaFruit combination of boards above, simply solder a jumper wire between the through-holes labeled "RST" and "A" ("A" is conveniently hardwired to GPIO pin 27) on the RFM69 FeatherWing.
 
-* The DIO2 Pin on the RFM69 needs to be connected to a pin on the ESP32 that will be used to output the Somfy RF codes generated by our sketch so they can be read by the RFM69 and converted to 433.42 MHz signals.  This sketch uses GPIO pin 4.  If you are using the AdaFruit combination of boards above, simply solder a jumper wire between the through-holes labeled "DIO2" and "F" ("F" is conveniently hardwired to GPIO pin 4) on the RFM69 FeatherWing.
+* The DIO2 Pin on the RFM69 needs to be connected to a pin on the ESP32 that will be used to output the Somfy RF codes generated by SomfyPlus so they can be read by the RFM69 and converted to 433.42 MHz signals.  This sketch uses GPIO pin 4.  If you are using the AdaFruit combination of boards above, simply solder a jumper wire between the through-holes labeled "DIO2" and "F" ("F" is conveniently hardwired to GPIO pin 4) on the RFM69 FeatherWing.
 
 You can of course use different pins for any of the above connections.  Just make sure to update the pin definitions at the top of the sketch to match whatever pins you have chosen:
 
@@ -52,26 +52,22 @@ You can of course use different pins for any of the above connections.  Just mak
 #define RFM_CHIP_SELECT   33      // this is the pin used for SPI control.  MUST be connected to the SPI Chip Select pin on the RFM69
 #define RFM_RESET_PIN     27      // this is the pin used to reset the RFM.  MUST be connected to the RESET pin on the RFM69
 ```
-NOTE:  If instead of using an RFM69 you decide to try a standard, non-programmable 433.92 MHz transmiter, you can skip all the connections above except for the RF Signal, which should still be connected from pin 4 on the ESP32 (or any alternative pin you chose) to the signal input pin of your transmitter.  The sketch will warn you that it cannot find the RFM69 when it first runs, but should work fine without modification.
 
 Finally, don't forget to solder an antenna wire (approximately 16.5cm in length) to the antenna pad, pin, or through-hole on the RFM69.
 
-The HomeSpan Somfy device also makes use of 5 pushbutton switches (4 are optional, 1 required).  The required pushbutton serves as both the Somfy PROG button as well as the device's channel SELECTOR button.  Three additional pushbutton switches serve as the Somfy UP, DOWN, and MY buttons.  These are optional and only need to be installed if you want to control a window shade or screen manually with pushbuttons in addition to using HomeKit.  The fifth pushbutton serves as the HomeSpan Control Button.  It is also optional since all of its functions can be alternatively accessed from the Arduino Serial Monitor using the [HomeSpan Command Line Interface](https://github.com/HomeSpan/HomeSpan/blob/master/docs/CLI.md).
-
-Each pushbutton installed should connect a particular ESP32 pin (see below) to ground when pressed.  HomeSpan takes case of debouncing the pushbuttons so no additional hardware is needed.  The pin definitions for the HomeSpan Somfy device are defined in the sketch as follows:
+SomfyPlus requires 3 normally-open pushbutton switches to function as the Somfy UP, DOWN, and MY buttons. Each pushbutton installed should connect a particular ESP32 pin (see diagram below) to ground when pressed.  HomeSpan takes care of debouncing the pushbuttons so no additional hardware is needed.  This sketch uses the following pins:
 
 ```C++
 // Assign pins for the physical Somfy pushbuttons
 
-#define PROG_BUTTON   17      // must have a button to enable programming remote (also serves as the channel SELECTOR button)
-#define UP_BUTTON     26      // button is optional
-#define MY_BUTTON     25      // button is optional
-#define DOWN_BUTTON   23      // button is optional
+#define DOWN_BUTTON   16         
+#define MY_BUTTON     22  
+#define UP_BUTTON     25
 ```
 
 You can of course choose your own pins for any button provided you update the definitions accordingly.
 
-HomeSpan uses GPIO pin 21 as the default for connecting the HomeSpan Control Button, but this too can be changed by calling `homeSpan.setControlPin(pin)` somewhere at the top of the sketch *before* the call to `homeSpan.begin()`.
+Finally, SomfyPlus utilizes two LEDs (each with a current-limiting resistor) - CONTINUE FROM HERE
 
 If using the Adafruit RFM69 FeatherWing, this is what the default wiring above will look like:
 
