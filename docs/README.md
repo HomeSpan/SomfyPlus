@@ -1,5 +1,8 @@
-# SomfyPlus
-A universal, multi-channel, HomeKit Controller for Somfy RTS Motorized Window Shades and Patio Screens. Runs on an ESP32 device as an Arduino sketch using the Arduino [HomeSpan Library](https://github.com/HomeSpan/HomeSpan).
+# SomfyPlus - A HomeSpan Project
+
+SomfyPlus is a universal, multi-channel, HomeKit Controller for Somfy RTS Motorized Window Shades and Patio Screens. Runs on an ESP32 device as an Arduino sketch.  Built with [HomeSpan](https://github.com/HomeSpan/HomeSpan).
+
+> :warning: This is an intermediate-level project that assumes you are already familiar with HomeSpan, including how to: compile Arduino sketches using the HomeSpan Library; configure a HomeSpan device with your home network's WiFi Credentials; pair a HomeSpan device to HomeKit; use the HomeSpan Command Line Interface (CLI); use the HomeSpan Control Button and Status LED.  If you are unfamiliar with these processes, or just need a refresher, please visit the [HomeSpan](https://github.com/HomeSpan/HomeSpan) and review [Getting Started with HomeSpan](https://github.com/HomeSpan/HomeSpan/blob/master/docs/GettingStarted.md) before tackling this project.  Note SomfyPlus does not require to you to develop any of your own HomeSpan code (the sketch contains everything your need), but you nevertheless may want to first try out some of the [HomeSpan Tutorials](https://github.com/HomeSpan/HomeSpan/blob/master/docs/Tutorials.md) to ensure HomeSpan operates as expected in your environment.
 
 Hardware used for this project:
 
