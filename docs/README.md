@@ -67,41 +67,47 @@ SomfyPlus requires 3 normally-open pushbutton switches to function as the Somfy 
 
 You can of course choose your own pins for any button provided you update the definitions accordingly.
 
-Finally, SomfyPlus utilizes two LEDs (each with a current-limiting resistor) - CONTINUE FROM HERE
+Finally, SomfyPlus utilizes two LEDs (each with a current-limiting resistor).  One LED serves as the HomeSpan Status LED and is generally connected to pin 13, which is HomeSpan's default.  The second serves as a visual indicator of transmissions and should be connected to the RFM_SIGNAL_PIN defined above. 
 
 If using the Adafruit RFM69 FeatherWing, this is what the default wiring above will look like:
 
 ![RFM69 Wiring](images/RFM69.png)
 
-Note this diagram includes an optional LED wired to the signal pin that will flash whenever the RFM69 transmits data.
-
 ## Configuring the Software
 
-Apart from possibly changing the default pin definitions above, the only other configuration required is to instantiate a Somfy Service for each window shade or screen you want to control with the HomeSpan Somfy device, using the following CREATE_SOMFY macro:
+Apart from possibly changing the default pin definitions above, the only other configuration required is to instantiate a Somfy Service for each window shade or screen you want to control with the HomeSpan Somfy device, using the following class:
 
-`CREATE_SOMFY(uint32_t channel, uint32_t raiseTime, uint32_t lowerTime`
+`new SomfyShade(uint8_t channel, char *name);`
 
-* *channel* - the channel number you want to assign to the window shade or screen.  Must be greater than zero and less than 2^32-1
-* *raiseTime* - the time it takes (in milliseconds) for the shade or screen to raise from fully closed to fully open
-* *lowerTime* - the time it takes (in milliseconds) for the shade or screen to lower from fully open to fully closed
+* *channel* - the channel number you want to assign to the window shade or screen.  Must be between 1 and 32
+* *name* - the name of the Somfy Shade as it will appear in the Home App on your iPhone
 
-Call the CREATE_SOMFY macro for each shade or screen you want to control with HomeSpan Somfy as such:
+Create an instance of SomfyShade() for each Somfy shade or screen you want to control with with SomfyPlus as follows: 
 
 ```C++
-CREATE_CHANNEL(1,21000,19000);          // assign a shade to Somfy Channel #1 with raiseTime=21000 ms and lowerTime=19000 ms
-CREATE_CHANNEL(2,11000,10000);          // assign a second shade to Somfy Channel #2 with raiseTime=11000 ms and lowerTime=10000 ms
-CREATE_CHANNEL(607,11000,10000);        // assign a third shade to Somfy Channel #607 (channel numbers do not need to be consecutive)
-CREATE_CHANNEL(14,11000,10000);         // assign a fourth shade to Somfy Channel #14 (channel numbers do not need to be in any order)
-
-CREATE_CHANNEL(2,5000,3000);            // BAD! Cannot re-use channel numbers within one HomeSpan Somfy device.  Will throw a run-time error.
-CREATE_CHANNEL(0,11000,10000);          // BAD! Cannot use zero as a channel number.  Will throw a run-time error.
+new SomfyShade(1,"Screen Door");
+new SomfyShade(2,"Living Room Window Shade");
+new SomfyShade(6,"Den Blinds");
+new SomfyShade(3,"Den Curtains");
 ```
 
 You can add, remove, or modify your channel configuration at any time, even after HomeSpan Somfy has been paired with HomeKit.  Changes you make will automatically be reflected in the Home App on your iOS device.
 
 ## Operating your HomeSpan Somfy Device and Linking to Window Shades/Screens
 
-HomeSpan Somfy is designed to operate just as any Somfy multi-channel remote, with the one exception that there are no LEDs or LCD displays to indicate which channel you have selected.  Instead, HomeSpan Somfy visually indicates the selected channel from within the Home App itself.  If you only have instantiated a single channel, there is nothing you need to select, and you can (temporarily) skip the next steps.  But if you created more than one channel, your next steps are to connect HomeSpan Somfy to your WiFi network and then pair the the device to HomeKit.  To do so, follow the general instructions for all HomeSpan devices and configure HomeSpan Somfy either using the [HomeSpan Command Line Interface](https://github.com/HomeSpan/HomeSpan/blob/master/docs/CLI.md) or using the HomeSpan Control Button (if you elected to installed one) as described in the [HomeSpan User Guide](https://github.com/HomeSpan/HomeSpan/blob/master/docs/UserGuide.md).
+SomfyPlus is designed to (mostly) operate just as any Somfy multi-channel remote:
+
+* a short press of the UP button raises the shade
+* a short press of the DOWN button lowers the shade
+* a short press of the MY button stops the shade while it is moving
+
+One difference between SomfyPlus and normal SOmfy remote is that a short press of the MY button when the shade is not movig does not have any effect.  On a normal Somfy remote the MY button can be programmed to move the shade to a pre-programmed location.  For reasons you will see below, this is not needed in SomfyPlus.
+
+A second difference is that there is no distinct PROG button in SomfyPlus to send a "programming" signal to a shade.  Instead, to send a programming signal, press and hold the UP and DOWN buttons *at the same time* for 3 seconds.  The programming signal operates the same as a normal Somfy remote: it is used to link and unlink the remote to a window shade.
+
+To link SomfyPlus to the first shade listed in your sketch, use the original Somfy remote for that shade to send a programmingt signal according to the instructions for that remote.  The shade itself should perform slight up/down movement (a "jog") confirming it has received a programming signal from the original remote.  Next, send a programming signal from SomfyPlus following the procedure above.  The shade should confirm receipt of this signal with a second "jog" and then return to normal operation.  Congratulations, you have just linked your first shade to SomfyPlus. Short-press the UP button and the shade should rise.  Short-press the DOWN button and the shade should lower.  The LED connected to RFM_SIGNAL_PIN should flash with each button press indicating a signal is being transmitted.  Note that SomfyPlus only transms signals whern it 
+
+hort press of the MY button when the shade is no moving   with the one exception that there are no LEDs or LCD displays to indicate which channel you have selected.  Instead, HomeSpan Somfy visually indicates the selected channel from within the Home App itself.  If you only have instantiated a single channel, there is nothing you need to select, and you can (temporarily) skip the next steps.  But if you created more than one channel, your next steps are to connect HomeSpan Somfy to your WiFi network and then pair the the device to HomeKit.  To do so, follow the general instructions for all HomeSpan devices and configure HomeSpan Somfy either using the [HomeSpan Command Line Interface](https://github.com/HomeSpan/HomeSpan/blob/master/docs/CLI.md) or using the HomeSpan Control Button (if you elected to installed one) as described in the [HomeSpan User Guide](https://github.com/HomeSpan/HomeSpan/blob/master/docs/UserGuide.md).
 
 Upon pairing with HomeKit, each channel you instantiated should appear as a separate tile in your Home App with a default name indicating the channel number (e.g. *Channel-1*, *Channel-607*).  As with all HomeKit tiles, you may rename this to anything you'd like, such as *Living Room Window Shade*.  Regardless of the name, HomeKit retains the proper connection back to the original channel number you specified in the sketch.
 
