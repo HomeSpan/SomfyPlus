@@ -64,7 +64,15 @@ void setup() {
 
   homeSpan.begin(Category::WindowCoverings,"Somfy-HomeSpan");
 
-  new SomfyShade(1,"Screen Door");
+  // DEFINE SOMFY SHADES HERE //
+  // First argument is channel number [1-32]
+  // Second argument is the name of the Somfy Shade as it will appear in the Home App on your iPhone
+  
+    new SomfyShade(1,"Screen Door");
+
+//  new SomfyShade(2,"Living Room Window Shade");
+//  new SomfyShade(6,"Den Blinds");
+//  new SomfyShade(3,"Den Curtains");
 
 } // end of setup()
 
