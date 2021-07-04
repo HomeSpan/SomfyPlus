@@ -148,6 +148,10 @@ Every Somfy shade is identified by a 24-bit address that must be unique across a
 #define SOMFY_ADDRESS  0x1000              // 0x0000 through 0x7FFFF
 ```
 
+## The Finished Product
+
+![SomfyPlus](images/FinishedDevice.jpeg)
+
 ## Tips and Tricks
 
 * If the window shade is *not* fully closed but pressing the DOWN button on SomfyPlus does nothing, check the Home App tile.  If it indicates the shade is already closed, this means the device's position estimate has gotten out of sync with the actual position of the shade.  This could happen if you operate the shade with the original Somfy remote, instead of with SomfyPlus.  To re-sync, use the UP button on SomfyPlus, or the tile in your Home App that corresponds to the window shade, to raise the shade until it is fully open.
