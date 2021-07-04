@@ -156,6 +156,8 @@ Every Somfy shade is identified by a 24-bit address that must be unique across a
 
 ## The Finished Product
 
+Installed in an outdoor outlet box (for permanent power) - controls a rolling patio room screen door.
+
 ![SomfyPlus](images/FinishedDevice.jpeg)
 
 ## Tips and Tricks
