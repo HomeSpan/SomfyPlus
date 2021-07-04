@@ -2,8 +2,6 @@
 
 SomfyPlus is a universal, multi-channel, HomeKit Controller for Somfy RTS Motorized Window Shades and Patio Screens. Runs on an ESP32 device as an Arduino sketch.  Built with [HomeSpan](https://github.com/HomeSpan/HomeSpan).
 
-> :warning: This is an intermediate-level project that assumes you are already familiar with HomeSpan, including how to: compile Arduino sketches using the HomeSpan Library; configure a HomeSpan device with your home network's WiFi Credentials; pair a HomeSpan device to HomeKit; use the HomeSpan Command Line Interface (CLI); use the HomeSpan Control Button and Status LED.  If you are unfamiliar with these processes, or just need a refresher, please visit the [HomeSpan](https://github.com/HomeSpan/HomeSpan) and review [Getting Started with HomeSpan](https://github.com/HomeSpan/HomeSpan/blob/master/docs/GettingStarted.md) before tackling this project.  Note SomfyPlus does not require to you to develop any of your own HomeSpan code (the sketch contains everything your need), but you nevertheless may want to first try out some of the [HomeSpan Tutorials](https://github.com/HomeSpan/HomeSpan/blob/master/docs/Tutorials.md) to ensure HomeSpan operates as expected in your environment.
-
 Hardware used for this project:
 
 * An ESP32 board, such as the [Adafruit HUZZAH32 – ESP32 Feather Board](https://www.adafruit.com/product/3405)
@@ -23,7 +21,7 @@ All Somfy remotes feature:
 * a button labeled "MY" that serves two purposes - 
   * if the shade is moving, pressing the MY button stops the motor
   * if the shade it stopped, pressing the MY button moves the shade to a predefined position (the "MY" position)
-* a PROG button that is used to put the motor into programming mode so you can add additional remotes
+* a PROGRAM button that is used to put the motor into programming mode so you can add additional remotes
 * a channel SELECTOR button, if the remote allows the user to control more than one shade or screen
 
 Based on the **superb** work by [Pushstack](https://pushstack.wordpress.com/somfy-rts-protocol/) and other contributors, who reverse-engineered and documented the Somfy-RTS protcols (much thanks!), we can construct a fully-functional, *HomeKit-enabled*, multi-channel Somfy remote using an ESP32, a simple RF transmitter, and the Arduino [HomeSpan Library](https://github.com/HomeSpan/HomeSpan).
@@ -34,7 +32,43 @@ Apart from the obvious benefit of having HomeKit (and Siri!) control of your Som
 
 * **Use HomeKit to set the absolute position of your window shade or screen!**  HomeKit natively supports sliders that allow you to specify the exact position of a window shade, from fully open (100%) to fully closed (0%) in increments of 1%.  Unfortunately, the Somfy RTS system does not generally support two way communications, nor do the motors transmit any status about the position of the shade or screen.  However, some clever logic inside the sketch and a few timing parameters is all that is needed to configure SomfyPlus to track and directly set a window shade to any desired target position.
 
-## Constructing the Hardware
+## Before You Begin
+
+This is an intermediate-level project that assumes you are already familiar with HomeSpan, including how to: compile Arduino sketches using the HomeSpan Library; configure a HomeSpan device with your home network's WiFi Credentials; pair a HomeSpan device to HomeKit; use the HomeSpan Command Line Interface (CLI); use the HomeSpan Control Button and Status LED.  If you are unfamiliar with these processes, or just need a refresher, please visit the [HomeSpan](https://github.com/HomeSpan/HomeSpan) and review [Getting Started with HomeSpan](https://github.com/HomeSpan/HomeSpan/blob/master/docs/GettingStarted.md) before tackling this project.  Note SomfyPlus does not require you to develop any of your own HomeSpan code (the sketch contains everything your need), but you nevertheless may want to first try out some of the [HomeSpan Tutorials](https://github.com/HomeSpan/HomeSpan/blob/master/docs/Tutorials.md) to ensure HomeSpan operates as expected in your environment.
+
+## Step 1: Configuring the Software and Upload to an ESP32 Device
+
+SomfyPlus is designed to operate as a bridge where each each window shade or screen is implemented as a separate HomeKit Accessory containing a single instance of a *Window Covering Service*.  The logic for each Somfy shade or screen is encapsulated in the `SomfyShade()` class.
+
+To customize SomfyPlus for your own home, simply modify the *SomfyPlus.ino* sketch file so that you have an instance of `SomfyShade()` for each Somfy shade or screen you want to control with with SomfyPlus as follows: 
+
+`new SomfyShade(uint8_t channel, char *name, uint32_t raiseTime=10000, uint32_t lowerTime=10000);`
+
+* *channel* - the channel number you want to assign to the window shade or screen.  Must be between 1 and 32
+* *name* - the name of the Somfy Shade as it will appear in the Home App on your iPhone
+* *raiseTime* - the time (in ms) for the shade to raise from fully closed to fully open (optional, default = 10 sec)
+* *lowerTime* - the time (in ms) for the shade to lower from fully open to fully closed (optional, default = 10 sec)
+
+For example, the code snippet below would be used to create 4 window shade/screens in SomfyPlus.  Note that the channel numbers you specify do not need to be consecutive - they can be in any order:
+
+```C++
+new SomfyShade(1,"Screen Door");
+new SomfyShade(2,"Living Room Window Shade");
+new SomfyShade(6,"Den Blinds",8500,7300);
+new SomfyShade(3,"Den Curtains",9000,9000);
+```
+
+Feel free to leave the raise and lower times for your shades as the default of 10 seconds.  These times can be calibrating directly from SomfyPlus once your remote is operational.  Note you can add, remove, or modify your channel configuration at any time, even after SomfyPlus has been paired with HomeKit.  Changes you make will automatically be reflected in the Home App on your iOS device.  However, once you link a shade to a specific channel (see below) that channel must always be used for that same shade unless you unlink the shade.
+
+Complete this step by compiling and uploading the sketch you an ESP32 device.
+
+## Step 2: Connecting SomfyPlus to Your Home Network and Pairing with HomeKit
+
+Once the sketch has been uploaded, connect SomfyPlus to your home network as you would any HomeSpan device.  Next, pair SomfyPlus to HomeKit. For each instance of the SomfyShade you should now see a Tile in your Home App that allows you to operate the shade (though your actual shades will not move until we construct the hardware and link shades and screens to each channel.
+
+Once you have verified the Tiles operate as expected, proceed to the next step.
+
+## Step 3: Constructing the Hardware
 
 In addition to an ESP32 board, SomfyPlus requires a "433 MHz" transmitter.  However, rather than using a standard carrier frequency of 433.92 MHz, Somfy RTS uses a carrier frequency of 433.42 MHz, which is 0.5 MHz lower than the standard.  Though it is possble to use a standard 433.92 MHz transmitter (such as the one used to construct a HomeSpan remote control for a [Zephyr Kitchen Vent Hood](https://github.com/HomeSpan/ZephyrVentHood)), there is no guarantee that the Somfy motor will accurately receive the RF signal, or that the range will allow for whole-home coverage.
 
@@ -68,7 +102,7 @@ SomfyPlus requires 3 normally-open pushbutton switches to function as the Somfy 
 #define UP_BUTTON     25
 ```
 
-You can of course choose your own pins for any button provided you update the definitions accordingly.
+You can of course choose your own pins for any button provided you update the definitions accordingly.  Note that the MY button also performs double-duty as the HomeSpan Control Button (i.e. press and hold the MY button to enter into HomeSpan's Command Mode).
 
 Finally, SomfyPlus utilizes two LEDs (each with a current-limiting resistor).  One LED serves as the HomeSpan Status LED and is generally connected to pin 13, which is HomeSpan's default.  The second serves as a visual indicator of transmissions and should be connected to the RFM_SIGNAL_PIN defined above. 
 
@@ -76,104 +110,73 @@ If using the Adafruit RFM69 FeatherWing, this is what the default wiring above w
 
 ![RFM69 Wiring](images/RFM69.png)
 
-## Configuring the Software
+## Step 4: Using the SomfyPlus Buttons to Operate and Select a Shade
 
-Apart from possibly changing the default pin definitions above, the only other configuration required is to instantiate a Somfy Service for each window shade or screen you want to control with the HomeSpan Somfy device, using the following class:
-
-`new SomfyShade(uint8_t channel, char *name);`
-
-* *channel* - the channel number you want to assign to the window shade or screen.  Must be between 1 and 32
-* *name* - the name of the Somfy Shade as it will appear in the Home App on your iPhone
-
-Create an instance of SomfyShade() for each Somfy shade or screen you want to control with with SomfyPlus as follows: 
-
-```C++
-new SomfyShade(1,"Screen Door");
-new SomfyShade(2,"Living Room Window Shade");
-new SomfyShade(6,"Den Blinds");
-new SomfyShade(3,"Den Curtains");
-```
-
-You can add, remove, or modify your channel configuration at any time, even after HomeSpan Somfy has been paired with HomeKit.  Changes you make will automatically be reflected in the Home App on your iOS device.
-
-## Operating your HomeSpan Somfy Device and Linking to Window Shades/Screens
-
-SomfyPlus is designed to (mostly) operate just as any Somfy multi-channel remote:
+SomfyPlus is designed to operate just as any Somfy multi-channel remote:
 
 * a short press of the UP button raises the shade
 * a short press of the DOWN button lowers the shade
 * a short press of the MY button stops the shade while it is moving
 
-One difference between SomfyPlus and normal SOmfy remote is that a short press of the MY button when the shade is not movig does not have any effect.  On a normal Somfy remote the MY button can be programmed to move the shade to a pre-programmed location.  For reasons you will see below, this is not needed in SomfyPlus.
+As you press the UP, DOWN, and MY buttons on SomfyPlus, you should see this operation reflected in one of the Tiles in your Home App.  
 
-A second difference is that there is no distinct PROG button in SomfyPlus to send a "programming" signal to a shade.  Instead, to send a programming signal, press and hold the UP and DOWN buttons *at the same time* for 3 seconds.  The programming signal operates the same as a normal Somfy remote: it is used to link and unlink the remote to a window shade.
+To operate a different shade using the SomfyPlus, double-press the MY button once.  A "warning" icon should appear on the Tile corresponding to the shade you just operated.  Now double-press the MY button again to advance this "warning" icon to the next Tile, indicating the shade that is now selected.  Subsequent double-presses of the MY button will continue to advance the "warning" icon from one Tile to the next.  Once the warning icon appears on the Tile of the shade you want to control, simply press the UP or DOWN button perform the desired operation.  The warning icon should disappear and the buttons on SomfyPlus will now control the newly-selected shade.
 
-To link SomfyPlus to the first shade listed in your sketch, use the original Somfy remote for that shade to send a programmingt signal according to the instructions for that remote.  The shade itself should perform slight up/down movement (a "jog") confirming it has received a programming signal from the original remote.  Next, send a programming signal from SomfyPlus following the procedure above.  The shade should confirm receipt of this signal with a second "jog" and then return to normal operation.  Congratulations, you have just linked your first shade to SomfyPlus. Short-press the UP button and the shade should rise.  Short-press the DOWN button and the shade should lower.  The LED connected to RFM_SIGNAL_PIN should flash with each button press indicating a signal is being transmitted.  Note that SomfyPlus only transmits signals when there is an action to be taken.  For example, if you press the DOWN button when the shade is fully lowered (or SomfyPlus "thinks" it's lowered) a signal will *not* be transmitted.
+A second difference is that there is no distinct PROGRAM button in SomfyPlus to send a "programming" signal to a shade.  Instead, to send a programming signal, press and hold the UP and DOWN buttons *at the same time* for 3 seconds.  The programming signal operates the same as a normal Somfy remote: it is used to link and unlink the remote to a window shade.
 
-Once you've confirmed you can operate your shade, it's time to connect SomfyPlus to your home WiFi network and pair it to HomeKit so you can operate it with the Home App on your iPhone, iPad, or Mac (or with Siri).  To do so, please visit the [HomeSpan Library Repository](https://github.com/HomeSpan/HomeSpan) for complete instructions on how to configure and pair HomeSpan devices.  Don't worry if you have more than one shade to configure - this will be done *after* SomfyPlus is paired your Home App.
+## Step 5: Linking Shades to SomfyPlus Channels
 
-NOTE: As the HomeSpan instructions explain, HomeSpan devices can be configured using the [HomeSpan Command Line Interface](https://github.com/HomeSpan/HomeSpan/blob/master/docs/CLI.md) or using the HomeSpan Control Button as described in the [HomeSpan User Guide](https://github.com/HomeSpan/HomeSpan/blob/master/docs/UserGuide.md).  SomfyPlus does not include a separate HomeSpan Control Button.  Instead, the MY button serves double-duty and acts as the HomeSpan Control Button.  For example, pressing and holding the MY button will cause SomfyPlus to enter the HomeSpan Command Mode, just as described in the HomeSpan User Guide.
+The process for linking SomfyPlus to an actual Somfy shade or screen is exactly the same as if you were adding a commercial Somfy remote.  First select the shade you want to link by following the steps above.  Then send a programming signal to that shade by pressing and holding the PROGRAM button *using the original Somfy remote* for that shade in accordance with the instructions for that remote.  The shade should respond by "jogging" up and down, indicating it is now in program mode.  Next, broadcast a programming signal from SomfyPlus by simultaneously pressing and holding the UP and DOWN buttons for 3 seconds.  If you have properly constructed the hardware, the shade should now perform a second jog, confirmimg receipt of this signal. 
 
-Upon successfully pairing SomfyPlus with HomeKit, each SomfyShade you instantiated in your sketch should appear as a separate tile in the Home App of your iPhone with the name specified in your sketch.  Press the tile corresponding the first shade you instantiated in the sketch.  If everything is working correctly, that shade should now open and close every time you press the tile.
+Pressing the UP and DOWN buttons on SomfyPlus should now cause the shade to fully raise or lower.  Pressing the MY button while the shade is moving should cause it to stop.  Pressing the corresponding Tile in the Home App should similarly raise and lower the shade.  Congratulations, you have just linked your first shade to HomeKit and can now operate it via the Home App on your iPhone, iPad, or Mac, as well as with Siri.  Repeat these same steps for all other shades.
 
-If you have more instantiated more than one shade in your sketch, the next step is to link SomfyPlus to those other shades.  Otherwise the tiles for those shades will operate as normal from your Home App, but there will be no shade listening for the signals SomfyPlus transmits.
+Note the LED connected to RFM_SIGNAL_PIN should flash with each operations indicating a signal is being transmitted by the RFM69.  However, SomfyPlus only transmits signals when there is an action to be taken.  For example, if you press the DOWN button when the shade is already fully lowered (or SomfyPlus "thinks" it's lowered) a signal will *not* be transmitted.
 
-On normal Somfy multi-channel remotes there is a selector switch that allows you to choose choose which channel to use.  SomfyPlus does not have a separate selector switch but instead uses the Home App tiles to provide a visual cue indicating whih shade it currently "selected."  To turn on the visual cue, double-press the MY button.  This should cause an warning to appear on the tile for the first shade in your Home App.  This is how you know which shade is currently being selected by SomfyPlus.  Double-press the MY button a second time and this visual cue should advance to the next tile.  If you now press the UP or DOWN buttons on SomfyPlus, it will transmit signals coded for the channel you defined for the second shade.
+## Step 6: Setting the Absolute Position of a Shade or Screen
 
-To link SomfyPlus to the second stage, repeat the same steps you performed for the first shade: use the original remote for that shade to send a programming signal; confirm the second shade makes a small jog.  Press and hold both the UP and DOWN button on SomfyPlus for 3 seconds, and confirm the shade makes another small jog.  That's it - SomfyPlus is now linked to the second shade.  Confirm everything is working by pressing either the first or second tile in the Home App to operate either the first or second shade.  Repeat these steps as many times as needed untl you've linked all the shades instantiated in your sketch.
+This is where the fun really begins.  Press and hold one of the Tiles for a shade in the Home App to open he slider control.  Moving the slider up and down to any position should cause the shade to raise or lower to that same position.  This works because SomfyPlus knows how long it takes for the shade to fully raise and lower, and it keeps track of how long the shade is moving either up or down.  This is the purpose of the *raiseTime* and *lowerTime* parameters of the `SomfyShade()` class.
 
-Note that double-pressing the MY button to select a different shade only effects which shade the UP and DOWN buttons on the SomfyPlus device control.  Once all your shades are linked, you can control them all directly from the Home App.  You only need to "select" a shade by double-pressing the MY button if you want to operate a share using the UP and DOWN buttons. 
+If you did not specify these parameters, or if the parameters do not seem to be correct, SomfyPlus can calibrate them for you automatically.  To calibrate the *raiseTime*, start with the shade in its fully lowered position and then press and *hold* the UP button until the shade starts to raise.  Then, when the shade reaches it's fully open position, press the MY button.  SomfyPlus records and saves this transmit time as the new *raiseTime* for this shade.  To calibrate the *lowerTime*, start with the shade in its fully raised position and then press and *hold* the DOWN button until the shade starts to lower.  Then, when the shade reaches it's fully closed position, press the MY button.  SomfyPlus records and saves this transmit time as the new *lowerTime* for this shade.
 
-Calibrating the Shade (TBD)
+Your shade is now fully calibrated.  Note you do *not* need to make any changes to your sketch - SomfyPlus will ignore any *raiseTime* and *lowerTime* parameters specified if it finds values for thee have been saved from a previous calibration.
 
+## The SomfyPlus Device Address
 
-Note that HomeSpan Somfy will track the position of the window shade whether you operate the shade via the Home App or by pressing the UP, DOWN, or MY pushbuttons on the HomeSpan Somfy device.  However, HomeSpan Somfy will lose calibration of the window shade's position if you also operate the shade with your original Somfy remote.  If you do use the original Somfy remote to move the window shade and the position estimate in HomeSpan Somfy gets out of sync with the actual position of the shade, simply use the Home App or the pushbuttons on the HomeSpan Somfy device to fully raise or fully lower the shade, at which point HomeSpan Somfy resets its estimate of the window shade's position to either fully open or fully closed.
+Every Somfy shade is identified by a 24-bit address that must be unique across all the shades in your home.  SomfyPlus splits this address space into two parts:  19 bits are used to set the address of the SomfyPlus device itself (0x0000 through 0x7FFFF), and 5 bits are used to specify the channel number (1-32).  If you deploy more than one SomfyPlus device in your home, you must change the SOMFY_ADDRESS so it is unique across all your devices, This ensures that the same two channel numbers used on different devices will nevertheless represent distinct 24-bit addresses:
+
+```C++
+#define SOMFY_ADDRESS  0x1000              // 0x0000 through 0x7FFFF
+```
 
 ## Tips and Tricks
 
-* If the window shade is *not* fully closed but pressing the DOWN pushbutton on the HomeSpan Somfy device does nothing, check the Home App tile.  If it indicates the shade is already closed, this means the device's position estimate has gotten out of sync with the actual position of the shade.  To recalibrate, use the UP button on the HomeSpan Somfy device, or the tile in your Home App that corresponds to the window shade, to raise the shade until it is fully open.
+* If the window shade is *not* fully closed but pressing the DOWN button on SomfyPlus does nothing, check the Home App tile.  If it indicates the shade is already closed, this means the device's position estimate has gotten out of sync with the actual position of the shade.  This could happen if you operate the shade with the original Somfy remote, instead of with SomfyPlus.  To re-sync, use the UP button on SomfyPlus, or the tile in your Home App that corresponds to the window shade, to raise the shade until it is fully open.
 
-* Alternatively, the problem may be that you are looking at the wrong shade, and are trying to lower a shade that is in fact already fully closed.  To check which shade is selected, press and release the PROG/SELECTOR button on the HomeSpan Somfy device and see which tile in your Home app lights up with the obstruction icon.   If you've selected the wrong shade, press and release the PROG/SELECTOR button again until the correct shade is selected.
+* Similarly, if the window shade is *not* fully open but pressing the UP button on SomfyPlus does nothing, re-sync by loweinr the shade fully using the DOWN button on SomfyPlus or the tile in your Home App.
 
-* Similarly, if the window shade is *not* fully open but pressing the UP pushbutton on the HomeSpan Somfy device does nothing, follow the same steps as above, except that to recalibrate, move the window shade to the fully closed position.
+* Alternatively, the problem may be that you are looking at the wrong shade, and are trying to lower a shade that is in fact already fully closed.  To check which shade is selected, double-press the MY button to bring up the visual cue in the Home App.
 
 * Note that the slider in the Home App represents the desired **target** position of the shade, which is not necessarily the same as the **current** position of the shade while it is moving.  For example, if the shade is open and you press the DOWN button, the slider in the Home App will jump immediately to the fully closed position, since this is the new target state, even though the shade will obviously take some time to fully close.
 
 * If you stop the shade while it is moving by pressing the MY button on the HomeSpan Somfy device, the target position will be updated to reflect this new position, and the slider in the Home App will adjust accordingly.
 
-* HomeSpan Somfy visually indicates the current channel selected by flashing an "obstruction" icon on the corresponding tile in your Home App.  This does *not* mean your shade or screen has hit an actual obstruction.  HomeSpan Somfy cannot detect actual obstructions.  Note the obstruction indicator will disappear from the selected Home App tile upon the next press of either the UP or DOWN button.
+* HomeSpan Somfy visually indicates the current channel selected by flashing an "obstruction" icon on the corresponding tile in your Home App.  This does *not* mean your shade or screen has hit an actual obstruction.  SomfyPlus cannot detect actual obstructions.  Note the obstruction indicator will disappear from the selected Home App tile upon the next press of either the UP or DOWN button.
 
-* To "unlink" a channel from window shade or screen, follow the normal Somfy procedures:  press and hold the PROG button on the **original** Somfy remote until the shade jogs up and down.  Next, short-press the PROG/SELECTOR button on the HomeSpan Somfy device to select the channel you want to unlink from the shade (as visually indicated with an "obstruction" icon on the corresponding Home App tile).  Finally, press and hold the PROG/SELECTOR button on the HomeSpan Somfy device until the shade jogs up and down a second time.   The channel has now been unlinked and will not operate the shade until it is re-linked, or linked to a different shade.
+* To unlink a channel from window shade or screen, follow the normal Somfy procedures:  press and hold the PROGRAM button on the *original* Somfy remote until the shade jogs up and down.  Select the shade you want to unlink from SomfyPlus by double-pressing the MY button.  Then simultaneously press and hold the UP and DOWN buttons for 3 seconds until the shade jogs once again.  The channel has now been unlinked and will not operate the shade until it is re-linked, or linked to a different shade.
 
 * Even if a channel is not linked to an actual shade, the UP, DOWN and MY buttons, as well as the corresponding tile in the Home App, will operate as normal and the RFM69 will continue to broadcast UP, DOWN, and MY signals, even though there is no window shade or screen listening for this signal.
 
-* Removing a channel from the sketch by deleting its CREATE_SOMFY() macro **does not** unlink the channel from the actual shade.  If you later add that channel back into the sketch, it will resume operating the same window shade or screen.  To unlink the channel from the window shade, you must either peform the steps described above, or reset the shade itself using other Somfy procedures.  Leaving a link in place even though you've deleted the channel from the sketch does not generally produce any problems, though it is good practice to first unlink the channel from the shade or screen before deleting it from the sketch, if you do not intend of re-using that channel with this same shade in the future.
+* Removing a channel from the sketch by deleting its `SomfyShade()` class **does not** unlink the channel from the actual shade.  If you later add that channel back into the sketch, it will resume operating the same window shade or screen.  To unlink the channel from the window shade, you must either peform the steps described above, or reset the shade itself using other Somfy procedures.  Leaving a link in place even though you've deleted the channel from the sketch does not generally produce any problems, though it is good practice to first unlink the channel from the shade or screen before deleting it from the sketch, if you do not intend of re-using that channel with this same shade in the future.
 
-* Like all Somfy remotes, you can link a single HomeSpan Somfy channel to more than one window shade or screen, in which case they will appear as a single tile and operate in tandem (both shades respond to the same RF signal).  Note that linking one channel to two shades will not allow you specify different raiseTimes and lowerTimes for each shade, which may be fine if the shades are identical and the timings are the same.
+* Like all Somfy remotes, you can link a SomfyPlus channel to more than one window shade or screen, in which case they will appear as a single tile and operate in tandem (both shades respond to the same RF signal).  Note that linking one channel to two shades will not allow you specify different raiseTimes and lowerTimes for each shade, which may be fine if the shades are identical and the timings are the same.
 
-* Also note that linking more than one shade or screen to the same channel to have them operate in tandem is *not* necessary when using HomeSpan Somfy.  This is because you can instead use the full power of HomeKit to create scenes that control multiple shades!  You can even use HomeKit automations to have different shades raise or lower to different positions at different times of the day. There are countless possibilities.
+* Also note that linking more than one shade or screen to the same channel to have them operate in tandem is *not* necessary when using SomfyPlus.  This is because you can instead use the full power of HomeKit to create scenes that control multiple shades!  You can even use HomeKit automations to have different shades raise or lower to different positions at different times of the day. There are countless possibilities.
 
-* Performing a Factory Reset on the HomeSpan Somfy device **does not** delete linking information.  This allows you to reset the device's WiFi and HomeKit pairing info, but retain all the linking data between your channels and your window shades.  Upon reconfiguring the device's WiFi and re-pairing to HomeKit, the same shades and will continue to operate as they did before the Factory Reset.
+* Performing a Factory Reset on SomfyPlus **does not** delete linking information.  This allows you to reset the device's WiFi and HomeKit pairing info, but retain all the linking data between your channels and your window shades.  Upon reconfiguring the device's WiFi and re-pairing to HomeKit, the same shades and will continue to operate as they did before the Factory Reset.
 
-* On the other hand, fully erasing the HomeSpan Somfy device's non-volatile-storage ("NVS") using the "E" command from within the [HomeSpan Command Line Interface](https://github.com/HomeSpan/HomeSpan/blob/master/docs/CLI.md) **deletes** all linkage information from the device.  Upon re-starting the sketch, all channels will need to be re-linked to a shade or screen.
+* On the other hand, fully erasing the SomfyPlus non-volatile-storage ("NVS") using the "E" command from within the [HomeSpan Command Line Interface](https://github.com/HomeSpan/HomeSpan/blob/master/docs/CLI.md) **deletes** all linkage information from the device.  Upon re-starting the sketch, all channels will need to be re-linked to a shade or screen.
 
-> Developer's note:  the NVS is used to store the Somfy rolling code for each Somfy channel address.  If the rolling codes are deleted, the Somfy addresses can't be used with the same shades since the rolling codes won't match (though each address could be used with a different shade).  To ensure you can re-link the same channel to the same shade, HomeSpan Somfy re-generates a new set of Somfy channel addresses upon re-start if the NVS is erased.  Technically, previously-linked window shades and screens still retain knowledge of the prior linking, but this should have no effect on the operation of the shade.  If you'd like to see the actual address assigned to any given channel, open the settings page for that channel's tile in the Home App. The original channel number should be listed under "Model" and the 3-byte Somfy address associated with that channel should be listed under the "Serial Number" with the prefix "RTS".
-
-## Ideas, Options and Possibilities
-
-* Use separate pushbuttons for the PROG and SELECTOR functions.  This is readily done with some small modifications to the code.
-
-* Connect an LED from the RFM_SIGNAL_PIN to ground through a 330Ω resistor.  The LED will flash in sync with the RF transmitter providing some visual feedback whenever HomeSpan Somfy opens, closes, or stops a shade, as well as when it sends a PROG signal.
-
-* Power the device with a large, rechargable battery pack so it can be used as a more portable remote (though why bother since you can control everything from the Home App and/or via voice with Siri).
-
-* Start a campaign to convince Apple to add a HomeKit option that allows a user to hold/stop a moving shade from within the Home App itself (and via Siri) so you don't need to push the "MY" button on the HomeSpan Somfy device.  This feature is actually listed as a Service in Apple's HomeKit documentation, but it does not appear to be implemented in the Home App.
-
-* Add a small OLED or 7-segment LED display to the device to provide a more direct indication of the selected channel, instead of needing to light up the "obstruction" icon of the selected tile in the Home App as the only a visual indicator.
-
-* Use (or create) a HomeKit-enabled sun-sensor to trigger HomeSpan Somfy to raise and lower shades.
-
-* Expand the functionality of HomeSpan's embedded web server (which is optionally used to configure a device's WiFi credentials and HomeKit Setup Pairing Code) to allow the creation/modification/deletion of Somfy channels *without the need to ever open the sketch or use the CREATE_SOMFY() macro*.
+* If you want to delete all SomfyPlus linking and calibration data from the device, but retain all other HomeSpan settings, type the "@d" command from within the HomeSpan CLI.
 
 ---
 
