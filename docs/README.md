@@ -142,8 +142,11 @@ Your shade is now fully calibrated.  Note you do *not* need to make any changes 
 
 ## The SomfyPlus Device Address
 
-Every Somfy shade is identified by a 24-bit address that must be unique across all the shades in your home.  SomfyPlus splits this address space into distinct blocks of 32 (5 bits).
+Every Somfy shade is identified by a 24-bit address that must be unique across all the shades in your home.  SomfyPlus splits this address space into two parts:  19 bits are used to set the address of the SomfyPlus device itself (0x0000 through 0x7FFFF), and 5 bits are used to specify the channel number (1-32).  If you deploy more than one SomfyPlus device in your home, you must change the SOMFY_ADDRESS so it is unique across all your devices, This ensures that the same two channel numbers used on different devices will nevertheless represent distinct 24-bit addresses:
 
+```C++
+#define SOMFY_ADDRESS  0x1000              // 0x0000 through 0x7FFFF
+```
 
 ## Tips and Tricks
 
