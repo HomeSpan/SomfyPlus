@@ -6,9 +6,10 @@ Hardware used for this project:
 
 * An ESP32 board, such as the [Adafruit HUZZAH32 – ESP32 Feather Board](https://www.adafruit.com/product/3405)
 * An RFM69 Transceiver, such as this [RFM69HCW FeatherWing](https://www.sparkfun.com/products/10534) from Adafruit
-* Three pushbuttons (normally-open) to serve as the Somfy UP, DOWN, and MY buttons (the MY button also serves as the HomeSpan Control Button)
+* Three pushbuttons (normally-open) to serve as the Somfy UP, DOWN, and MY buttons (the MY button also serves as the HomeSpan Control Button), such as these [12 mm round tactile buttons](https://www.adafruit.com/product/1009) from Adafruit
 * One LED and current-limiting resistor to serve as the HomeSpan Status LED
 * One LED and current-limiting resistor to provide visual feedback when the RFM69 is transmitting Somfy RTS signals
+* a [Adafruit FeatherWing Proto Board](https://www.adafruit.com/product/2884) to mount the buttons and LEDs
 
 ## Overview
 
