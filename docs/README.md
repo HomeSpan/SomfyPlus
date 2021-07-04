@@ -2,16 +2,6 @@
 
 SomfyPlus is a universal, multi-channel, HomeKit Controller for Somfy RTS Motorized Window Shades and Patio Screens. Runs on an ESP32 device as an Arduino sketch.  Built with [HomeSpan](https://github.com/HomeSpan/HomeSpan).
 
-> :warning: This is an intermediate-level project that assumes you are already familiar with HomeSpan, including how to: compile Arduino sketches using the HomeSpan Library; configure a HomeSpan device with your home network's WiFi Credentials; pair a HomeSpan device to HomeKit; use the HomeSpan Command Line Interface (CLI); use the HomeSpan Control Button and Status LED.  If you are unfamiliar with these processes, or just need a refresher, please visit the [HomeSpan](https://github.com/HomeSpan/HomeSpan) and review [Getting Started with HomeSpan](https://github.com/HomeSpan/HomeSpan/blob/master/docs/GettingStarted.md) before tackling this project.  Note SomfyPlus does not require to you to develop any of your own HomeSpan code (the sketch contains everything your need), but you nevertheless may want to first try out some of the [HomeSpan Tutorials](https://github.com/HomeSpan/HomeSpan/blob/master/docs/Tutorials.md) to ensure HomeSpan operates as expected in your environment.
-
-Hardware used for this project:
-
-* An ESP32 board, such as the [Adafruit HUZZAH32 – ESP32 Feather Board](https://www.adafruit.com/product/3405)
-* An RFM69 Transceiver, such as this [RFM69HCW FeatherWing](https://www.sparkfun.com/products/10534) from Adafruit
-* Three pushbuttons (normally-open) to serve as the Somfy UP, DOWN, and MY buttons (the MY button also serves as the HomeSpan Control Button)
-* One LED and current-limiting resistor to serve as the HomeSpan Status LED
-* One LED and current-limiting resistor to provide visual feedback when RFM69 is transmitting Somfy RTS signals
-
 ## Overview
 
 Somfy motors are widely used in automated window shades, patios screens, and porch awnings.  And though there are many different models, almost all are controlled with an RF system called RTS ([Radio Technology Somfy](https://asset.somfy.com/Document/dcb579ff-df8d-47d8-a288-01e06a4480ab_RTS_Brochure_5-2019.pdf)) that uses Somfy RF controllers, such as the 5-channel [Somfy Tellis RTS](https://www.somfysystems.com/en-us/products/1810633/telis-rts).
@@ -23,7 +13,7 @@ All Somfy remotes feature:
 * a button labeled "MY" that serves two purposes - 
   * if the shade is moving, pressing the MY button stops the motor
   * if the shade it stopped, pressing the MY button moves the shade to a predefined position (the "MY" position)
-* a PROG button that is used to put the motor into programming mode so you can add additional remotes
+* a PROGRAM button that is used to put the motor into programming mode so you can add additional remotes
 * a channel SELECTOR button, if the remote allows the user to control more than one shade or screen
 
 Based on the **superb** work by [Pushstack](https://pushstack.wordpress.com/somfy-rts-protocol/) and other contributors, who reverse-engineered and documented the Somfy-RTS protcols (much thanks!), we can construct a fully-functional, *HomeKit-enabled*, multi-channel Somfy remote using an ESP32, a simple RF transmitter, and the Arduino [HomeSpan Library](https://github.com/HomeSpan/HomeSpan).
@@ -34,7 +24,49 @@ Apart from the obvious benefit of having HomeKit (and Siri!) control of your Som
 
 * **Use HomeKit to set the absolute position of your window shade or screen!**  HomeKit natively supports sliders that allow you to specify the exact position of a window shade, from fully open (100%) to fully closed (0%) in increments of 1%.  Unfortunately, the Somfy RTS system does not generally support two way communications, nor do the motors transmit any status about the position of the shade or screen.  However, some clever logic inside the sketch and a few timing parameters is all that is needed to configure SomfyPlus to track and directly set a window shade to any desired target position.
 
+## Before You Begin
+
+This is an intermediate-level project that assumes you are already familiar with HomeSpan, including how to: compile Arduino sketches using the HomeSpan Library; configure a HomeSpan device with your home network's WiFi Credentials; pair a HomeSpan device to HomeKit; use the HomeSpan Command Line Interface (CLI); use the HomeSpan Control Button and Status LED.  If you are unfamiliar with these processes, or just need a refresher, please visit the [HomeSpan](https://github.com/HomeSpan/HomeSpan) and review [Getting Started with HomeSpan](https://github.com/HomeSpan/HomeSpan/blob/master/docs/GettingStarted.md) before tackling this project.  Note SomfyPlus does not require you to develop any of your own HomeSpan code (the sketch contains everything your need), but you nevertheless may want to first try out some of the [HomeSpan Tutorials](https://github.com/HomeSpan/HomeSpan/blob/master/docs/Tutorials.md) to ensure HomeSpan operates as expected in your environment.
+
+## Step 1: Configuring the Software
+
+SomfyPlus is designed to operate as a bridge where each each window shade or screen is implemented as a separate HomeKit Accessory containing a single instance of a *Window Covering Service*.  The logic for each Somfy shade or screen is encapsulated in the `SomfyShade()` class.
+
+To customize SomfyPlus for your own home, simply modify the *SomfyPlus.ino* sketch file so that you have an instance of `SomfyShade()` for each Somfy shade or screen you want to control with with SomfyPlus as follows: 
+
+`new SomfyShade(uint8_t channel, char *name, uint32_t raiseTime=10000, uint32_t lowerTime=10000);`
+
+* *channel* - the channel number you want to assign to the window shade or screen.  Must be between 1 and 32
+* *name* - the name of the Somfy Shade as it will appear in the Home App on your iPhone
+
+For example, the code snippet below would be used to create 4 window shade/screens in SomfyPlus.  Note that the channel numbers you specify do not need to be consecutive - they can be in any order:
+
+```C++
+new SomfyShade(1,"Screen Door");
+new SomfyShade(2,"Living Room Window Shade");
+new SomfyShade(6,"Den Blinds");
+new SomfyShade(3,"Den Curtains");
+```
+
+
+To add and configure The only configuration required is to instantiate a Somfy Shade Accessory for each window shade or screen you want to control with the HomeSpan Somfy device, using the following class:
+
+
+
+
+
+You can add, remove, or modify your channel configuration at any time, even after HomeSpan Somfy has been paired with HomeKit.  Changes you make will automatically be reflected in the Home App on your iOS device.
+
 ## Constructing the Hardware
+
+
+Hardware used for this project:
+
+* An ESP32 board, such as the [Adafruit HUZZAH32 – ESP32 Feather Board](https://www.adafruit.com/product/3405)
+* An RFM69 Transceiver, such as this [RFM69HCW FeatherWing](https://www.sparkfun.com/products/10534) from Adafruit
+* Three pushbuttons (normally-open) to serve as the Somfy UP, DOWN, and MY buttons (the MY button also serves as the HomeSpan Control Button)
+* One LED and current-limiting resistor to serve as the HomeSpan Status LED
+* One LED and current-limiting resistor to provide visual feedback when RFM69 is transmitting Somfy RTS signals
 
 In addition to an ESP32 board, SomfyPlus requires a "433 MHz" transmitter.  However, rather than using a standard carrier frequency of 433.92 MHz, Somfy RTS uses a carrier frequency of 433.42 MHz, which is 0.5 MHz lower than the standard.  Though it is possble to use a standard 433.92 MHz transmitter (such as the one used to construct a HomeSpan remote control for a [Zephyr Kitchen Vent Hood](https://github.com/HomeSpan/ZephyrVentHood)), there is no guarantee that the Somfy motor will accurately receive the RF signal, or that the range will allow for whole-home coverage.
 
@@ -76,25 +108,6 @@ If using the Adafruit RFM69 FeatherWing, this is what the default wiring above w
 
 ![RFM69 Wiring](images/RFM69.png)
 
-## Configuring the Software
-
-Apart from possibly changing the default pin definitions above, the only other configuration required is to instantiate a Somfy Service for each window shade or screen you want to control with the HomeSpan Somfy device, using the following class:
-
-`new SomfyShade(uint8_t channel, char *name);`
-
-* *channel* - the channel number you want to assign to the window shade or screen.  Must be between 1 and 32
-* *name* - the name of the Somfy Shade as it will appear in the Home App on your iPhone
-
-Create an instance of SomfyShade() for each Somfy shade or screen you want to control with with SomfyPlus as follows: 
-
-```C++
-new SomfyShade(1,"Screen Door");
-new SomfyShade(2,"Living Room Window Shade");
-new SomfyShade(6,"Den Blinds");
-new SomfyShade(3,"Den Curtains");
-```
-
-You can add, remove, or modify your channel configuration at any time, even after HomeSpan Somfy has been paired with HomeKit.  Changes you make will automatically be reflected in the Home App on your iOS device.
 
 ## Operating your HomeSpan Somfy Device and Linking to Window Shades/Screens
 
