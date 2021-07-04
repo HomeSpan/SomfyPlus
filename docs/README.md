@@ -62,7 +62,7 @@ Feel free to leave the raise and lower times for your shades as the default of 1
 
 Complete this step by compiling and uploading the sketch you an ESP32 device.
 
-## Step 2: Connect SomfyPlus to Your Home Network and Pair with HomeKit
+## Step 2: Connecting SomfyPlus to Your Home Network and Pairing with HomeKit
 
 Once the sketch has been uploaded, connect SomfyPlus to your home network as you would any HomeSpan device.  Next, pair SomfyPlus to HomeKit. For each instance of the SomfyShade you should now see a Tile in your Home App that allows you to operate the shade (though your actual shades will not move until we construct the hardware and link shades and screens to each channel.
 
@@ -132,13 +132,18 @@ Pressing the UP and DOWN buttons on SomfyPlus should now cause the shade to full
 
 Note the LED connected to RFM_SIGNAL_PIN should flash with each operations indicating a signal is being transmitted by the RFM69.  However, SomfyPlus only transmits signals when there is an action to be taken.  For example, if you press the DOWN button when the shade is already fully lowered (or SomfyPlus "thinks" it's lowered) a signal will *not* be transmitted.
 
-# Step 6: Setting the Absolute Position of a Shade or Screen
+## Step 6: Setting the Absolute Position of a Shade or Screen
 
 This is where the fun really begins.  Press and hold one of the Tiles for a shade in the Home App to open he slider control.  Moving the slider up and down to any position should cause the shade to raise or lower to that same position.  This works because SomfyPlus knows how long it takes for the shade to fully raise and lower, and it keeps track of how long the shade is moving either up or down.  This is the purpose of the *raiseTime* and *lowerTime* parameters of the `SomfyShade()` class.
 
 If you did not specify these parameters, or if the parameters do not seem to be correct, SomfyPlus can calibrate them for you automatically.  To calibrate the *raiseTime*, start with the shade in its fully lowered position and then press and *hold* the UP button until the shade starts to raise.  Then, when the shade reaches it's fully open position, press the MY button.  SomfyPlus records and saves this transmit time as the new *raiseTime* for this shade.  To calibrate the *lowerTime*, start with the shade in its fully raised position and then press and *hold* the DOWN button until the shade starts to lower.  Then, when the shade reaches it's fully closed position, press the MY button.  SomfyPlus records and saves this transmit time as the new *lowerTime* for this shade.
 
-Your shade is now fully calibrated.  Note you do *not* need to make any changes to your sketch - SomfyPlus will ignore any *raiseTime* and *lowerTime* parameters specified if it finds values for thee have been saved from a previous calibration. 
+Your shade is now fully calibrated.  Note you do *not* need to make any changes to your sketch - SomfyPlus will ignore any *raiseTime* and *lowerTime* parameters specified if it finds values for thee have been saved from a previous calibration.
+
+## The SomfyPlus Device Address
+
+Every Somfy shade is identified by a 24-bit address that must be unique across all the shades in your home.  SomfyPlus splits this address space into distinct blocks of 32 (5 bits).
+
 
 ## Tips and Tricks
 
