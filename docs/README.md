@@ -2,6 +2,14 @@
 
 SomfyPlus is a universal, multi-channel, HomeKit Controller for Somfy RTS Motorized Window Shades and Patio Screens. Runs on an ESP32 device as an Arduino sketch.  Built with [HomeSpan](https://github.com/HomeSpan/HomeSpan).
 
+Hardware used for this project:
+
+* An ESP32 board, such as the [Adafruit HUZZAH32 – ESP32 Feather Board](https://www.adafruit.com/product/3405)
+* An RFM69 Transceiver, such as this [RFM69HCW FeatherWing](https://www.sparkfun.com/products/10534) from Adafruit
+* Three pushbuttons (normally-open) to serve as the Somfy UP, DOWN, and MY buttons (the MY button also serves as the HomeSpan Control Button)
+* One LED and current-limiting resistor to serve as the HomeSpan Status LED
+* One LED and current-limiting resistor to provide visual feedback when RFM69 is transmitting Somfy RTS signals
+
 ## Overview
 
 Somfy motors are widely used in automated window shades, patios screens, and porch awnings.  And though there are many different models, almost all are controlled with an RF system called RTS ([Radio Technology Somfy](https://asset.somfy.com/Document/dcb579ff-df8d-47d8-a288-01e06a4480ab_RTS_Brochure_5-2019.pdf)) that uses Somfy RF controllers, such as the 5-channel [Somfy Tellis RTS](https://www.somfysystems.com/en-us/products/1810633/telis-rts).
@@ -28,7 +36,7 @@ Apart from the obvious benefit of having HomeKit (and Siri!) control of your Som
 
 This is an intermediate-level project that assumes you are already familiar with HomeSpan, including how to: compile Arduino sketches using the HomeSpan Library; configure a HomeSpan device with your home network's WiFi Credentials; pair a HomeSpan device to HomeKit; use the HomeSpan Command Line Interface (CLI); use the HomeSpan Control Button and Status LED.  If you are unfamiliar with these processes, or just need a refresher, please visit the [HomeSpan](https://github.com/HomeSpan/HomeSpan) and review [Getting Started with HomeSpan](https://github.com/HomeSpan/HomeSpan/blob/master/docs/GettingStarted.md) before tackling this project.  Note SomfyPlus does not require you to develop any of your own HomeSpan code (the sketch contains everything your need), but you nevertheless may want to first try out some of the [HomeSpan Tutorials](https://github.com/HomeSpan/HomeSpan/blob/master/docs/Tutorials.md) to ensure HomeSpan operates as expected in your environment.
 
-## Step 1: Configuring the Software
+## Step 1: Configuring the Software and Upload to an ESP32 Device
 
 SomfyPlus is designed to operate as a bridge where each each window shade or screen is implemented as a separate HomeKit Accessory containing a single instance of a *Window Covering Service*.  The logic for each Somfy shade or screen is encapsulated in the `SomfyShade()` class.
 
@@ -38,35 +46,29 @@ To customize SomfyPlus for your own home, simply modify the *SomfyPlus.ino* sket
 
 * *channel* - the channel number you want to assign to the window shade or screen.  Must be between 1 and 32
 * *name* - the name of the Somfy Shade as it will appear in the Home App on your iPhone
+* *raiseTime* - the time (in ms) for the shade to raise from fully closed to fully open (optional, default = 10 sec)
+* *lowerTime* - the time (in ms) for the shade to lower from fully open to fully closed (optional, default = 10 sec)
 
 For example, the code snippet below would be used to create 4 window shade/screens in SomfyPlus.  Note that the channel numbers you specify do not need to be consecutive - they can be in any order:
 
 ```C++
 new SomfyShade(1,"Screen Door");
 new SomfyShade(2,"Living Room Window Shade");
-new SomfyShade(6,"Den Blinds");
-new SomfyShade(3,"Den Curtains");
+new SomfyShade(6,"Den Blinds",8500,7300);
+new SomfyShade(3,"Den Curtains",9000,9000);
 ```
 
+Feel free to leave the raise and lower times for your shades as the default of 10 seconds.  These times can be calibrating directly from SomfyPlus once your remote is operational.  Note you can add, remove, or modify your channel configuration at any time, even after SomfyPlus has been paired with HomeKit.  Changes you make will automatically be reflected in the Home App on your iOS device.  However, once you link a shade to a specific channel (see below) that channel must always be used for that same shade unless you unlink the shade.
 
-To add and configure The only configuration required is to instantiate a Somfy Shade Accessory for each window shade or screen you want to control with the HomeSpan Somfy device, using the following class:
+Complete this step by compiling and uploading the sketch you an ESP32 device.
 
+## Step 2: Connect SomfyPlus to Your Home Network and Pair with HomeKit
 
+Once the sketch has been uploaded, connect SomfyPlus to your home network as you would any HomeSpan device.  Next, pair SomfyPlus to HomeKit. For each instance of the SomfyShade you should now see a Tile in your Home App that allows you to operate the shade (though your actual shades will not move until we construct the hardware and link shades and screens to each channel.
 
-
-
-You can add, remove, or modify your channel configuration at any time, even after HomeSpan Somfy has been paired with HomeKit.  Changes you make will automatically be reflected in the Home App on your iOS device.
+Once you have verified the Tiles operate as expected, proceed to the next step.
 
 ## Constructing the Hardware
-
-
-Hardware used for this project:
-
-* An ESP32 board, such as the [Adafruit HUZZAH32 – ESP32 Feather Board](https://www.adafruit.com/product/3405)
-* An RFM69 Transceiver, such as this [RFM69HCW FeatherWing](https://www.sparkfun.com/products/10534) from Adafruit
-* Three pushbuttons (normally-open) to serve as the Somfy UP, DOWN, and MY buttons (the MY button also serves as the HomeSpan Control Button)
-* One LED and current-limiting resistor to serve as the HomeSpan Status LED
-* One LED and current-limiting resistor to provide visual feedback when RFM69 is transmitting Somfy RTS signals
 
 In addition to an ESP32 board, SomfyPlus requires a "433 MHz" transmitter.  However, rather than using a standard carrier frequency of 433.92 MHz, Somfy RTS uses a carrier frequency of 433.42 MHz, which is 0.5 MHz lower than the standard.  Though it is possble to use a standard 433.92 MHz transmitter (such as the one used to construct a HomeSpan remote control for a [Zephyr Kitchen Vent Hood](https://github.com/HomeSpan/ZephyrVentHood)), there is no guarantee that the Somfy motor will accurately receive the RF signal, or that the range will allow for whole-home coverage.
 
@@ -108,7 +110,6 @@ If using the Adafruit RFM69 FeatherWing, this is what the default wiring above w
 
 ![RFM69 Wiring](images/RFM69.png)
 
-
 ## Operating your HomeSpan Somfy Device and Linking to Window Shades/Screens
 
 SomfyPlus is designed to (mostly) operate just as any Somfy multi-channel remote:
@@ -117,9 +118,15 @@ SomfyPlus is designed to (mostly) operate just as any Somfy multi-channel remote
 * a short press of the DOWN button lowers the shade
 * a short press of the MY button stops the shade while it is moving
 
-One difference between SomfyPlus and normal SOmfy remote is that a short press of the MY button when the shade is not movig does not have any effect.  On a normal Somfy remote the MY button can be programmed to move the shade to a pre-programmed location.  For reasons you will see below, this is not needed in SomfyPlus.
+In order to conserve space, SomfyPlus does not have a distinct PROGRAM button or a SELECTOR switch.  Instead the following are used:
 
-A second difference is that there is no distinct PROG button in SomfyPlus to send a "programming" signal to a shade.  Instead, to send a programming signal, press and hold the UP and DOWN buttons *at the same time* for 3 seconds.  The programming signal operates the same as a normal Somfy remote: it is used to link and unlink the remote to a window shade.
+* PROGRAM - simultaneously press and hold the UP and DOWN buttons for 3 seconds to transmit a Somfy PROGRAM signal
+* SELECTOR - double-press the MY button to advance control to the next shade
+
+As you press the UP, DOWN, and MY buttons on SomfyPlus, you should see this operation reflected in one of the Tiles in your Home App.  To operate a different shade using the buttons on the remote, double-press the MY button once.  A "warning" icon should appear on the Tile corresponding to the shade you just operated.  Now double-press the MY button again to advance this "warning" icon advance to the next Tile, indicating the shade that is now selected.  Subsequent double-presses of the MY button will continue to advance the "warning" icon from one Tile to the next.  Once the warning icon appears on the Tile of the shade you want to control, simply press the UP or DOWN button perform the desired operation.  The warning icon should disappear and the buttons on SomfyPlus will now control the newly-selected shade.
+
+
+A second difference is that there is no distinct PROGRAM button in SomfyPlus to send a "programming" signal to a shade.  Instead, to send a programming signal, press and hold the UP and DOWN buttons *at the same time* for 3 seconds.  The programming signal operates the same as a normal Somfy remote: it is used to link and unlink the remote to a window shade.
 
 To link SomfyPlus to the first shade listed in your sketch, use the original Somfy remote for that shade to send a programmingt signal according to the instructions for that remote.  The shade itself should perform slight up/down movement (a "jog") confirming it has received a programming signal from the original remote.  Next, send a programming signal from SomfyPlus following the procedure above.  The shade should confirm receipt of this signal with a second "jog" and then return to normal operation.  Congratulations, you have just linked your first shade to SomfyPlus. Short-press the UP button and the shade should rise.  Short-press the DOWN button and the shade should lower.  The LED connected to RFM_SIGNAL_PIN should flash with each button press indicating a signal is being transmitted.  Note that SomfyPlus only transmits signals when there is an action to be taken.  For example, if you press the DOWN button when the shade is fully lowered (or SomfyPlus "thinks" it's lowered) a signal will *not* be transmitted.
 
