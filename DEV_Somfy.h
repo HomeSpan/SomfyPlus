@@ -220,6 +220,28 @@ struct DEV_Somfy : Service::WindowCovering {
 
 //////////////////////////////////////
 
+static void program(const char *s){
+    String command = String(s);
+    int shadeNumber = command.substring(2).toInt();
+ 
+    program(shadeNumber);
+}
+
+static void program(int shadeNumber){
+    Serial.printf("Programming shade: %d", shadeNumber);
+
+    DEV_Somfy *ss=shadeList[shadeNumber];
+
+    ss->indicator->setVal(0);
+    ss->transmit(SOMFY_PROGRAM);
+    downButton.wait();
+    downButton.reset();        
+    upButton.wait();        
+    upButton.reset();
+}  
+
+//////////////////////////////////////
+
   static void poll(){
 
     DEV_Somfy *ss=shadeList[selectedShade];
@@ -228,12 +250,7 @@ struct DEV_Somfy : Service::WindowCovering {
       
       if(upButton.type()==PushButton::LONG){
         if(downButton.primed()){
-          ss->indicator->setVal(0);
-          ss->transmit(SOMFY_PROGRAM);
-          downButton.wait();
-          downButton.reset();        
-          upButton.wait();        
-          upButton.reset();
+          program(selectedShade);
         } else {
           ss->target->setVal(100);
           ss->indicator->setVal(0);
@@ -259,12 +276,7 @@ struct DEV_Somfy : Service::WindowCovering {
       
       if(downButton.type()==PushButton::LONG){
         if(upButton.primed()){
-          ss->indicator->setVal(0);
-          ss->transmit(SOMFY_PROGRAM);
-          downButton.wait();
-          downButton.reset();        
-          upButton.wait();        
-          upButton.reset();
+          program(selectedShade);
         } else {
           ss->target->setVal(0);
           ss->indicator->setVal(0);
