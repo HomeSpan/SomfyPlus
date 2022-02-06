@@ -343,7 +343,7 @@ struct DEV_Somfy : Service::WindowCovering {
 struct SomfyShade{
   char channel_s[6];
 
-  SomfyShade(uint8_t channel, char *name, uint32_t raiseTime=10000, uint32_t lowerTime=10000){
+  SomfyShade(uint8_t channel, const char *name, uint32_t raiseTime=10000, uint32_t lowerTime=10000){
 
     if(!somfyNVS){
       nvs_open("SOMFY_DATA",NVS_READWRITE,&somfyNVS);
