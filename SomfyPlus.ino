@@ -44,7 +44,7 @@
 #define RFM_CHIP_SELECT   33      // this is the pin used for SPI control.  MUST be connected to the SPI Chip Select pin on the RFM69
 #define RFM_RESET_PIN     27      // this is the pin used to reset the RFM.  MUST be connected to the RESET pin on the RFM69
 
-#define SKETCH_VERSION  "2.1.0"       // version of the Homespan SomfyPlus sketch
+#define SKETCH_VERSION  "2.2.0"       // version of the Homespan SomfyPlus sketch
 #define REQUIRED VERSION(1,3,0)       // required version of the HomeSpan Library
 
 #include "HomeSpan.h" 
@@ -57,11 +57,12 @@ void setup() {
 
   homeSpan.setLogLevel(1);
   homeSpan.setControlPin(MY_BUTTON);
+  homeSpan.setStatusPin(13);
   homeSpan.enableOTA();
   homeSpan.setSketchVersion(SKETCH_VERSION);
   
   new SpanUserCommand('D', "- delete Somfy Shade data and Restart", SomfyShade::deleteData);
-  new SpanUserCommand('P', "- Sends program command for linking with blinders. Usage: P <shade number>", DEV_Somfy::program);
+  new SpanUserCommand('P', "- sends program command for linking with blinders. Usage: P <shade number>", DEV_Somfy::program);
 
   homeSpan.begin(Category::WindowCoverings,"Somfy-HomeSpan");
 

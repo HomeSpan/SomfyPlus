@@ -220,25 +220,25 @@ struct DEV_Somfy : Service::WindowCovering {
 
 //////////////////////////////////////
 
-static void program(const char *s){
-    String command = String(s);
-    int shadeNumber = command.substring(2).toInt();
- 
-    program(shadeNumber);
-}
-
-static void program(int shadeNumber){
-    Serial.printf("Programming shade: %d", shadeNumber);
-
-    DEV_Somfy *ss=shadeList[shadeNumber];
-
-    ss->indicator->setVal(0);
-    ss->transmit(SOMFY_PROGRAM);
-    downButton.wait();
-    downButton.reset();        
-    upButton.wait();        
-    upButton.reset();
-}  
+  static void program(const char *s){
+      String command = String(s);
+      int shadeNumber = command.substring(2).toInt();
+   
+      program(shadeNumber);
+  }
+  
+  static void program(int shadeNumber){
+      Serial.printf("Programming shade: %d", shadeNumber);
+  
+      DEV_Somfy *ss=shadeList[shadeNumber];
+  
+      ss->indicator->setVal(0);
+      ss->transmit(SOMFY_PROGRAM);
+      downButton.wait();
+      downButton.reset();        
+      upButton.wait();        
+      upButton.reset();
+  }  
 
 //////////////////////////////////////
 
