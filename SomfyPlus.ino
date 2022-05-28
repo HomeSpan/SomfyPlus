@@ -60,7 +60,8 @@ void setup() {
   homeSpan.enableOTA();
   homeSpan.setSketchVersion(SKETCH_VERSION);
   
-  new SpanUserCommand('D',"- delete Somfy Shade data and Restart",SomfyShade::deleteData);
+  new SpanUserCommand('D', "- delete Somfy Shade data and Restart", SomfyShade::deleteData);
+  new SpanUserCommand('P', "- Sends program command for linking with blinders. Usage: P <shade number>", DEV_Somfy::program);
 
   homeSpan.begin(Category::WindowCoverings,"Somfy-HomeSpan");
 
@@ -73,7 +74,6 @@ void setup() {
 //  new SomfyShade(2,"Living Room Window Shade");
 //  new SomfyShade(6,"Den Blinds");
 //  new SomfyShade(3,"Den Curtains");
-
 } // end of setup()
 
 //////////////////////////////////////
